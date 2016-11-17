@@ -1,0 +1,33 @@
+import React {Component} from 'react';
+
+var queryDataTable = "SELECT YEAR(EQUIPMENT_LOCAL_TIMESTAMP) as YEAR "
+    + "FROM DASH105737.VEGVESENET_TELLEPUNKT_RAW "
+    + "GROUP BY YEAR(EQUIPMENT_LOCAL_TIMESTAMP) " //GROUP BY is hundreds of times faster than distinct when using column store
+    + "ORDER BY YEAR(EQUIPMENT_LOCAL_TIMESTAMP);";
+var result;
+
+queryDashDB(queryDataTable, function (data) {
+  result = data;
+  res.json(mapYearResults(result));
+});
+
+
+function /* @callback */ queryDashDB(query, callback) {
+  ibmdb.open(connString, function (err, conn) {
+    if (err)
+      return console.log(err);
+    conn.query(query, function (err, data) {
+      if (err) {
+        console.log(err);
+        callback(null);
+      } else {
+        console.log("Query submitted successfully");
+        // Callbacks are important in this asynchronous case, because using a simple return would most likely return data before it is actually fetched from the DB.
+        callback(data);
+      }
+      conn.close(function () {
+        console.log("SQL query done and closed!");
+      });
+    });
+  });
+}
